@@ -1,65 +1,49 @@
 const express = require('express');
-const { faker } = require('@faker-js/faker');
-
 const router = express.Router();
+const ProductsService = require('../services/products.service');
+const service = new ProductsService();
 
-router.get('/', (req, res) => {
-  const products = [];
-  const { size } = req.query;
-  const limit = size || 10;
-  for (let index = 0; index < size; index++) {
-    products.push({
-      name: faker.commerce.productName(), 
-      price: parseInt(faker.commerce.price(), 10),
-      image: faker.image.url()
-    });
-  };
-  res.json(products);
+router.get('/', async (req, res) => {
+    const products = await service.find();
+    res.status(200).json(products)
 });
 
 //GET: Recibir parámetros
 //Los EndPoints específicos deben ir antes que los dinámicos
-router.get('/filter', (req, res) => {
+router.get('/filter', async (req, res) => {
   res.send('Filter activado');
 })
 
 
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   const { id } = req.params;
-  if (id === "999") {
-    res.status(404).json({ message: "Not found"})
-  }
-  res.status(200).json({
-    id,
-    name: 'Laptop',
-    price: 1500
-  })
+  const products = await service.findOne(id);
+  res.json(products);
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const body = req.body;
-  res.status(201).json({
-    message: 'created',
-    data: body
-  })
+  const result = await service.create(body);
+  res.status(201).json(result);
 } );
 
-router.patch('/:id', (req, res) => {
-  const { id } = req.params;
-  const body = req.body;
-  res.json({
-    message: 'update',
-    data: body,
-    id
-  });
+router.patch('/:id', async (req, res) => {
+  try{
+    const { id } = req.params;
+    const body = req.body;
+    const productUpdated = await service.update(id, body);
+    res.json(productUpdated);
+  }catch(err){
+    res.status(404).json({
+      message: err.message
+    })
+  }
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const { id } = req.params;
-  res.json({
-    message: 'deleted',
-    id
-  });
+  const result = await service.delete(id);
+  res.json(result);
 });
 
 module.exports = router;
